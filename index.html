@@ -57,6 +57,16 @@
           </div>
         </div>
 
+        <div class="difficulty-box">
+          <span class="section-label">Chọn phi thuyền</span>
+          <div id="shipGroup" class="ship-selector"></div>
+        </div>
+
+        <div class="menu-actions">
+          <button id="achOpenBtn" class="btn-secondary btn-compact" type="button">🏆 Thành tựu</button>
+          <button id="shakeBtn" class="btn-hud active" type="button">Rung màn hình: BẬT</button>
+        </div>
+
         <div class="controls-guide">
           <p><strong>Di chuyển:</strong> W A S D / Mũi tên / Kéo chuột</p>
           <p><strong>Bắn &amp; Tiếng:</strong> Tự bắn (<code>F</code>), Âm thanh (<code>M</code>), Tạm dừng (<code>P</code>)</p>
@@ -70,6 +80,17 @@
 
         <button id="startBtn" class="btn-primary" type="button">BẮT ĐẦU CHƠI</button>
       </div>
+
+      <!-- Màn hình Thành tựu -->
+      <div id="achievementsScreen" class="overlay">
+        <h2 class="ach-title">🏆 THÀNH TỰU</h2>
+        <p id="achCountText" class="subtitle">0/8 đã mở khóa</p>
+        <ul id="achList" class="ach-list"></ul>
+        <button id="achCloseBtn" class="btn-primary" type="button">QUAY LẠI</button>
+      </div>
+
+      <!-- Thông báo mở khóa thành tựu -->
+      <div id="achToast" class="ach-toast" role="status" aria-live="polite"></div>
 
       <!-- Màn hình Tạm dừng -->
       <div id="pauseScreen" class="overlay">
@@ -106,6 +127,7 @@
 
   <!-- Nạp các file JS theo đúng thứ tự (không dùng ES module để mở thẳng file index.html vẫn chạy được) -->
   <script src="js/config.js"></script>
+  <script src="js/ships.js"></script>
   <script src="js/sound.js"></script>
   <script src="js/player.js"></script>
   <script src="js/enemy.js"></script>
