@@ -166,12 +166,16 @@ function maybeDropPowerUp(x, y) {
 function handlePlayerHit(currentTime) {
   const outcome = player.takeDamage(currentTime);
   if (outcome === "shield") {
+    ui.achievements.notify("shield_block");
+    ui.shake(3, 160);
     sound.playPlayerHit();
     spawnExplosion(player.x + player.width / 2, player.y + player.height / 2, "#22d3ee", 18);
     addFloatingText(player.x + player.width / 2, player.y - 10, "CHẮN ĐÒN!", "#22d3ee");
     return false;
   }
   if (outcome === "damaged") {
+    ui.achievements.notify("hit");
+    ui.shake(player.hp <= 0 ? 12 : 7, player.hp <= 0 ? 600 : 320);
     if (player.hp <= 0) {
       sound.playExplosion(true);
       sound.playGameOver();
@@ -209,6 +213,7 @@ function startNewGame() {
   sound.ensureContext();
   currentDifficulty = ui.getSelectedDifficulty();
   player.applyDifficulty(currentDifficulty);
+  player.applyShip(ui.getSelectedShip());
   player.reset();
 
   enemies = [];
@@ -230,6 +235,7 @@ function startNewGame() {
   lastFrameTime = lastEnemySpawnTime;
   gameState = "playing";
 
+  ui.achievements.notify("run_start", { difficulty: currentDifficulty.id });
   ui.updateHUD(score, highScore, wave, player.hp, player.maxHp);
   ui.showScreen("playing");
 }
@@ -277,6 +283,7 @@ function updateGame(currentTime, dtFactor) {
     bossCount += 1;
     boss = new Boss(wave, bossCount, currentDifficulty);
     bossWarningUntil = currentTime + 2200;
+    ui.shake(4, 500);
     sound.playBossWarning();
   }
 
@@ -322,6 +329,7 @@ function updateGame(currentTime, dtFactor) {
         const ey = enemy.y + enemy.height / 2;
 
         if (destroyed) {
+          ui.achievements.notify("kill");
           score += enemy.scoreValue;
           updateHighScoreIfNeeded();
           const color = enemy.type === "zigzag" ? "#c084fc" : "#f97316";
@@ -344,6 +352,8 @@ function updateGame(currentTime, dtFactor) {
         if (bossDied) {
           const bx = boss.x + boss.width / 2;
           const by = boss.y + boss.height / 2;
+          ui.achievements.notify("boss_kill");
+          ui.shake(9, 500);
           score += boss.scoreValue;
           updateHighScoreIfNeeded();
           nextBossWave += GAME_CONFIG.BOSS.EVERY_WAVES;
@@ -398,6 +408,7 @@ function updateGame(currentTime, dtFactor) {
       const ix = item.x + item.width / 2;
       const iy = item.y + item.height / 2;
       sound.playPowerUp(item.type);
+      ui.achievements.notify("powerup");
 
       if (item.type === "heal") {
         const healed = player.heal(1);

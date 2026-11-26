@@ -47,6 +47,8 @@ class Player {
     this.height = GAME_CONFIG.PLAYER.HEIGHT;
     this.speed = GAME_CONFIG.PLAYER.SPEED;
     this.maxHp = GAME_CONFIG.PLAYER.MAX_HP;
+    this.ship = SHIP_MODELS.phantom;
+    this.shootCooldown = GAME_CONFIG.PLAYER.SHOOT_COOLDOWN_MS;
     this.autoFire = true; // Mặc định tự động bắn cho đỡ mỏi tay giữ Space
     this.weaponLevel = 1;
     this.weaponBoostUntil = 0;
@@ -56,6 +58,14 @@ class Player {
 
   applyDifficulty(diffConfig) {
     this.maxHp = diffConfig.playerMaxHp;
+  }
+
+  // Áp dụng chỉ số mẫu phi thuyền (gọi SAU applyDifficulty)
+  applyShip(ship) {
+    this.ship = ship;
+    this.speed = GAME_CONFIG.PLAYER.SPEED * ship.speedMul;
+    this.shootCooldown = GAME_CONFIG.PLAYER.SHOOT_COOLDOWN_MS * ship.cooldownMul;
+    this.maxHp = Math.max(1, this.maxHp + ship.hpBonus);
   }
 
   reset() {
@@ -152,7 +162,7 @@ class Player {
     // Bắn đạn khi bật Tự bắn, hoặc khi giữ Space / giữ chuột
     let didShoot = false;
     if (this.autoFire || inputState.shoot) {
-      if (currentTime - this.lastShotTime >= GAME_CONFIG.PLAYER.SHOOT_COOLDOWN_MS) {
+      if (currentTime - this.lastShotTime >= this.shootCooldown) {
         this.spawnBullets();
         this.lastShotTime = currentTime;
         didShoot = true;
@@ -199,45 +209,10 @@ class Player {
 
     ctx.save();
 
-    // Đổi màu điểm nhấn theo cấp vũ khí đang dùng
-    const wingColor = this.weaponLevel === 3 ? "#db2777" : this.weaponLevel === 2 ? "#ca8a04" : "#0284c7";
-    const bodyColor = this.weaponLevel === 3 ? "#f472b6" : this.weaponLevel === 2 ? "#facc15" : "#38bdf8";
-
-    // Ngọn lửa động cơ phía sau nhấp nháy
-    const flameLen = 10 + Math.random() * 8;
-    ctx.fillStyle = "#f97316";
-    ctx.beginPath();
-    ctx.moveTo(cx - 7, bottom - 4);
-    ctx.lineTo(cx + 7, bottom - 4);
-    ctx.lineTo(cx, bottom + flameLen);
-    ctx.closePath();
-    ctx.fill();
-
-    // Cánh phi thuyền
-    ctx.fillStyle = wingColor;
-    ctx.beginPath();
-    ctx.moveTo(cx, top + 10);
-    ctx.lineTo(this.x + this.width, bottom - 4);
-    ctx.lineTo(cx + 8, bottom - 10);
-    ctx.lineTo(cx - 8, bottom - 10);
-    ctx.lineTo(this.x, bottom - 4);
-    ctx.closePath();
-    ctx.fill();
-
-    // Thân chính phi thuyền
-    ctx.fillStyle = bodyColor;
-    ctx.beginPath();
-    ctx.moveTo(cx, top);
-    ctx.lineTo(cx + 10, bottom - 6);
-    ctx.lineTo(cx - 10, bottom - 6);
-    ctx.closePath();
-    ctx.fill();
-
-    // Buồng lái kính sáng
-    ctx.fillStyle = "#e0f2fe";
-    ctx.beginPath();
-    ctx.ellipse(cx, top + 20, 4, 8, 0, 0, Math.PI * 2);
-    ctx.fill();
+    // Cấp vũ khí 2-3 đổi màu tàu; cấp 1 dùng màu riêng của mẫu tàu
+    const wingColor = this.weaponLevel === 3 ? "#db2777" : this.weaponLevel === 2 ? "#ca8a04" : this.ship.wing;
+    const bodyColor = this.weaponLevel === 3 ? "#f472b6" : this.weaponLevel === 2 ? "#facc15" : this.ship.body;
+    drawShipShape(ctx, this.ship, this.x, this.y, this.width, this.height, { wing: wingColor, body: bodyColor });
 
     // Vòng khiên bảo vệ nếu đang bật
     if (this.hasShield(currentTime)) {
