@@ -1,0 +1,9 @@
+# Thư mục công cụ và lịch nhắc cá nhân (không đưa lên GitHub Public)
+tools/
+
+# File rác hệ điều hành và trình soạn thảo
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+.vscode/

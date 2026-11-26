@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Chiến Cơ Vũ Trụ 2D — Đồ án Nhập môn CNTT</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="game-wrapper">
+    <!-- Thanh thông tin phía trên màn hình game -->
+    <header class="hud">
+      <div class="hud-item">
+        <span class="label">ĐIỂM</span>
+        <span id="scoreDisplay" class="value">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="label">KỶ LỤC</span>
+        <span id="highScoreDisplay" class="value">0</span>
+      </div>
+      <div class="hud-item">
+        <span class="label">ĐỢT</span>
+        <span id="waveDisplay" class="value">1</span>
+      </div>
+      <div class="hud-actions">
+        <button id="autoFireBtn" class="btn-hud active" type="button" title="Phím F để bật/tắt">
+          Tự bắn: BẬT
+        </button>
+        <button id="soundBtn" class="btn-hud active" type="button" title="Phím M để bật/tắt tiếng">
+          🔊
+        </button>
+      </div>
+      <div class="hud-item hp-box">
+        <span class="label">MÁU</span>
+        <div class="hp-bar-bg">
+          <div id="hpBarFill" class="hp-bar-fill"></div>
+        </div>
+        <span id="hpText" class="hp-text">3/3</span>
+      </div>
+    </header>
+
+    <!-- Khung vẽ chính của trò chơi -->
+    <main class="canvas-container">
+      <canvas id="gameCanvas" width="480" height="680"></canvas>
+
+      <!-- Màn hình Bắt đầu -->
+      <div id="startScreen" class="overlay active">
+        <h1 class="game-title">CHIẾN CƠ VŨ TRỤ</h1>
+        <p class="subtitle">Bản dựng Chặng 2 — Boss, Power-up, Âm thanh &amp; Top 5</p>
+
+        <div class="difficulty-box">
+          <span class="section-label">Chọn độ khó</span>
+          <div id="difficultyGroup" class="difficulty-selector">
+            <button class="btn-diff" type="button" data-difficulty="easy">Dễ</button>
+            <button class="btn-diff active" type="button" data-difficulty="normal">Thường</button>
+            <button class="btn-diff" type="button" data-difficulty="hard">Khó</button>
+          </div>
+        </div>
+
+        <div class="controls-guide">
+          <p><strong>Di chuyển:</strong> W A S D / Mũi tên / Kéo chuột</p>
+          <p><strong>Bắn &amp; Tiếng:</strong> Tự bắn (<code>F</code>), Âm thanh (<code>M</code>), Tạm dừng (<code>P</code>)</p>
+          <p><strong>Vật phẩm:</strong> <code>+</code> Hồi máu &bull; <code>W</code> Đạn đa tia &bull; <code>S</code> Khiên</p>
+        </div>
+
+        <div class="leaderboard-box">
+          <h3>BẢNG XẾP HẠNG TOP 5</h3>
+          <ol id="startLeaderboardList" class="leaderboard-list"></ol>
+        </div>
+
+        <button id="startBtn" class="btn-primary" type="button">BẮT ĐẦU CHƠI</button>
+      </div>
+
+      <!-- Màn hình Tạm dừng -->
+      <div id="pauseScreen" class="overlay">
+        <h2>TẠM DỪNG</h2>
+        <button id="resumeBtn" class="btn-primary" type="button">TIẾP TỤC</button>
+        <button id="restartFromPauseBtn" class="btn-secondary" type="button">CHƠI LẠI</button>
+      </div>
+
+      <!-- Màn hình Kết thúc (Game Over) -->
+      <div id="gameOverScreen" class="overlay">
+        <h2 class="gameover-title">TRÒ CHƠI KẾT THÚC</h2>
+        <div class="summary-stats">
+          <p class="final-score">Điểm: <strong id="finalScoreText">0</strong></p>
+          <p class="final-wave">Đợt: <strong id="finalWaveText">1</strong> &bull; <strong id="finalDifficultyText">Thường</strong></p>
+        </div>
+
+        <div id="nameEntryBox" class="name-entry-box">
+          <p class="name-entry-hint">Bạn lọt Top 5! Nhập tên để lưu kỷ lục:</p>
+          <div class="name-entry-row">
+            <input id="playerNameInput" type="text" maxlength="16" placeholder="Nhập tên của bạn..." />
+            <button id="saveScoreBtn" class="btn-secondary btn-compact" type="button">LƯU ĐIỂM</button>
+          </div>
+        </div>
+
+        <div class="leaderboard-box">
+          <h3>BẢNG XẾP HẠNG TOP 5</h3>
+          <ol id="gameOverLeaderboardList" class="leaderboard-list"></ol>
+        </div>
+
+        <button id="restartBtn" class="btn-primary" type="button">CHƠI LẠI</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Nạp các file JS theo đúng thứ tự (không dùng ES module để mở thẳng file index.html vẫn chạy được) -->
+  <script src="js/config.js"></script>
+  <script src="js/sound.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/enemy.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
