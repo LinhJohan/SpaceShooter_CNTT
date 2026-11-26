@@ -88,5 +88,12 @@ const GAME_CONFIG = {
   LEADERBOARD_KEY: "space_shooter_cntt_leaderboard_v2",
   LEADERBOARD_LIMIT: 5,
   LAST_PLAYER_NAME_KEY: "space_shooter_cntt_last_name",
-  SOUND_MUTED_KEY: "space_shooter_cntt_muted"
+  SOUND_MUTED_KEY: "space_shooter_cntt_muted",
+  MUSIC: {
+    NORMAL_SRC: "audio/bgm_normal.mp3",
+    UNDERSCORE_SRC: "audio/bgm_underscore.mp3",
+    VOLUME: 0.45,
+    CROSSFADE_MS: 600,
+    SYNC_THRESHOLD_SEC: 0.04
+  }
 };
