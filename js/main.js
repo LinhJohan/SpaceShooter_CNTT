@@ -238,6 +238,7 @@ function startNewGame() {
   ui.achievements.notify("run_start", { difficulty: currentDifficulty.id });
   ui.updateHUD(score, highScore, wave, player.hp, player.maxHp);
   ui.showScreen("playing");
+  sound.startMusic(false);
 }
 
 function togglePause() {
@@ -246,10 +247,12 @@ function togglePause() {
 
   if (gameState === "playing") {
     gameState = "paused";
+    sound.pauseMusic();
     ui.showScreen("paused");
   } else if (gameState === "paused") {
     gameState = "playing";
     lastFrameTime = performance.now();
+    sound.resumeMusic();
     ui.showScreen("playing");
   }
 }
@@ -258,6 +261,7 @@ function triggerGameOver() {
   gameState = "gameover";
   activeActions.clear();
   isPointerDown = false;
+  sound.stopMusic();
 
   updateHighScoreIfNeeded();
   ui.updateHUD(score, highScore, wave, 0, player.maxHp);
@@ -285,6 +289,7 @@ function updateGame(currentTime, dtFactor) {
     bossWarningUntil = currentTime + 2200;
     ui.shake(4, 500);
     sound.playBossWarning();
+    sound.setBossMusic(true);
   }
 
   // Chỉ sinh quái thường khi chưa có Boss
@@ -367,6 +372,7 @@ function updateGame(currentTime, dtFactor) {
           powerUps.push(new PowerUp(bx - 24, by, "heal"));
           powerUps.push(new PowerUp(bx + 24, by, Math.random() < 0.5 ? "weapon" : "shield"));
           boss = null;
+          sound.setBossMusic(false);
         } else {
           spawnExplosion(bullet.x, bullet.y, "#fde047", 4);
           sound.playHit();
