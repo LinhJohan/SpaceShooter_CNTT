@@ -121,6 +121,10 @@ class GameUI {
     this.musicToast = document.getElementById("musicToast");
     this.musicToastTimer = null;
     this.achOpenBtn = document.getElementById("achOpenBtn");
+    this.leaderboardScreen = document.getElementById("leaderboardScreen");
+    this.leaderboardOpenBtn = document.getElementById("leaderboardOpenBtn");
+    this.guideScreen = document.getElementById("guideScreen");
+    this.guideOpenBtn = document.getElementById("guideOpenBtn");
     this.resetProgressBtn = document.getElementById("resetProgressBtn");
     this.shipGroup = document.getElementById("shipGroup");
     this.toastQueue = [];
@@ -227,6 +231,29 @@ class GameUI {
       this.achScreen.classList.remove("active");
       this.startScreen.classList.add("active");
     });
+    if (this.leaderboardOpenBtn && this.leaderboardScreen) {
+      this.leaderboardOpenBtn.addEventListener("click", () => {
+        this.renderLeaderboard(this.startLeaderboardList);
+        this.startScreen.classList.remove("active");
+        this.leaderboardScreen.classList.add("active");
+        this.leaderboardOpenBtn.blur();
+      });
+      document.getElementById("leaderboardCloseBtn").addEventListener("click", () => {
+        this.leaderboardScreen.classList.remove("active");
+        this.startScreen.classList.add("active");
+      });
+    }
+    if (this.guideOpenBtn && this.guideScreen) {
+      this.guideOpenBtn.addEventListener("click", () => {
+        this.startScreen.classList.remove("active");
+        this.guideScreen.classList.add("active");
+        this.guideOpenBtn.blur();
+      });
+      document.getElementById("guideCloseBtn").addEventListener("click", () => {
+        this.guideScreen.classList.remove("active");
+        this.startScreen.classList.add("active");
+      });
+    }
     if (this.resetProgressBtn) {
       this.resetProgressBtn.addEventListener("click", () => {
         if (window.confirm("Bạn có chắc muốn xóa toàn bộ kỷ lục và thành tựu?")) {
@@ -538,6 +565,8 @@ class GameUI {
     if (this.settingsScreen) this.settingsScreen.classList.remove("active");
     this.gameOverScreen.classList.remove("active");
     this.achScreen.classList.remove("active");
+    if (this.leaderboardScreen) this.leaderboardScreen.classList.remove("active");
+    if (this.guideScreen) this.guideScreen.classList.remove("active");
 
     if (this.pauseMenuBtn) {
       const inGame = state === "playing" || state === "paused" || state === "settings";

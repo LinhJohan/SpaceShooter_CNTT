@@ -2,9 +2,9 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>Chiến Cơ Vũ Trụ 2D — Đồ án Nhập môn CNTT</title>
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="game-wrapper">
@@ -86,21 +86,32 @@
 
         <div class="menu-actions">
           <button id="achOpenBtn" class="btn-secondary btn-compact" type="button">🏆 Thành tựu</button>
+          <button id="leaderboardOpenBtn" class="btn-secondary btn-compact" type="button">🏅 Xếp hạng</button>
+          <button id="guideOpenBtn" class="btn-secondary btn-compact" type="button">❔ Hướng dẫn</button>
           <button id="resetProgressBtn" class="btn-secondary btn-compact btn-danger-outline" type="button">🗑️ Reset kỷ lục</button>
         </div>
 
+        <button id="startBtn" class="btn-primary btn-start-main" type="button">BẮT ĐẦU CHƠI</button>
+      </div>
+
+      <!-- Màn hình Bảng xếp hạng -->
+      <div id="leaderboardScreen" class="overlay">
+        <h2 class="ach-title">🏅 BẢNG XẾP HẠNG TOP 5</h2>
+        <div class="leaderboard-box">
+          <ol id="startLeaderboardList" class="leaderboard-list"></ol>
+        </div>
+        <button id="leaderboardCloseBtn" class="btn-primary" type="button">QUAY LẠI</button>
+      </div>
+
+      <!-- Màn hình Hướng dẫn -->
+      <div id="guideScreen" class="overlay">
+        <h2 class="ach-title">❔ HƯỚNG DẪN</h2>
         <div class="controls-guide">
-          <p><strong>Di chuyển:</strong> W A S D / Mũi tên / Kéo chuột</p>
+          <p><strong>Di chuyển:</strong> Kéo tay trên màn hình / Chuột / W A S D / Mũi tên</p>
           <p><strong>Bắn &amp; Tiếng:</strong> Tự bắn (<code>F</code>), Âm thanh (<code>M</code>), Tạm dừng (<code>P</code>)</p>
           <p><strong>Vật phẩm:</strong> <code>+</code> Hồi máu &bull; <code>W</code> Đạn đa tia &bull; <code>S</code> Khiên</p>
         </div>
-
-        <div class="leaderboard-box">
-          <h3>BẢNG XẾP HẠNG TOP 5</h3>
-          <ol id="startLeaderboardList" class="leaderboard-list"></ol>
-        </div>
-
-        <button id="startBtn" class="btn-primary" type="button">BẮT ĐẦU CHƠI</button>
+        <button id="guideCloseBtn" class="btn-primary" type="button">QUAY LẠI</button>
       </div>
 
       <!-- Màn hình Thành tựu -->
