@@ -1,3 +1,13 @@
+:root {
+  --game-w: min(480px, calc(100vw - 16px), calc((100vh - 88px) * 480 / 680));
+}
+
+@supports (height: 100dvh) {
+  :root {
+    --game-w: min(480px, calc(100vw - 16px), calc((100dvh - 88px) * 480 / 680));
+  }
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -9,11 +19,12 @@ body {
   color: #e2e8f0;
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 10px;
+  padding: 8px;
 }
 
 .game-wrapper {
@@ -24,13 +35,15 @@ body {
   gap: 8px;
   height: 100%;
   max-height: 100vh;
+  max-height: 100dvh;
   width: 100%;
 }
 
 /* Thanh trạng thái trên cùng — luôn nằm gọn trong màn hình */
 .hud {
-  width: min(480px, calc((100vh - 86px) * 480 / 680));
-  min-width: 320px;
+  width: var(--game-w);
+  max-width: 100%;
+  min-width: 0;
   background: rgba(15, 23, 42, 0.92);
   border: 1px solid #334155;
   border-radius: 10px;
@@ -112,12 +125,13 @@ body {
   text-align: right;
 }
 
-/* Khung Canvas tự co giãn vừa màn hình laptop mà giữ nguyên tỷ lệ 480:680 */
+/* Khung Canvas tự co giãn vừa màn hình laptop & điện thoại, giữ nguyên tỷ lệ 480:680 */
 .canvas-container {
   position: relative;
-  height: min(680px, calc(100vh - 86px));
-  width: min(480px, calc((100vh - 86px) * 480 / 680));
-  min-width: 320px;
+  width: var(--game-w);
+  height: calc(var(--game-w) * 680 / 480);
+  min-width: 0;
+  max-width: 100%;
   border-radius: 12px;
   overflow: hidden;
   border: 2px solid #38bdf8;
@@ -705,4 +719,24 @@ canvas {
   border: 1px solid rgba(56, 189, 248, 0.25);
   border-radius: 8px;
   padding: 6px 12px;
+}
+
+@media (max-width: 420px) {
+  .hud {
+    padding: 6px 8px;
+    gap: 4px;
+  }
+
+  .hud-item .value {
+    font-size: 14px;
+  }
+
+  .hp-box {
+    min-width: 70px;
+  }
+
+  .btn-hud {
+    padding: 5px 7px;
+    font-size: 11px;
+  }
 }
