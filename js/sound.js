@@ -3,22 +3,41 @@ class SoundManager {
   constructor() {
     this.ctx = null;
     this.muted = this.loadMutedState();
+    this.masterVolume = this.loadVolumeState();
 
     // Dynamic Music: bản thường (khi có Boss) và bản underscore (khi không có Boss)
     const musicCfg = (typeof GAME_CONFIG !== "undefined" && GAME_CONFIG.MUSIC) || {
-      NORMAL_SRC: "audio/bgm_normal.mp3",
-      UNDERSCORE_SRC: "audio/bgm_underscore.mp3",
       VOLUME: 0.45,
       CROSSFADE_MS: 600,
-      SYNC_THRESHOLD_SEC: 0.04
+      SYNC_THRESHOLD_SEC: 0.04,
+      TRACKS: [
+        {
+          id: "default",
+          title: "Default Theme",
+          normalSrc: "audio/bgm_normal.mp3",
+          underscoreSrc: "audio/bgm_underscore.mp3"
+        }
+      ]
     };
 
     this.musicVolume = musicCfg.VOLUME;
     this.crossfadeMs = musicCfg.CROSSFADE_MS;
     this.syncThresholdSec = musicCfg.SYNC_THRESHOLD_SEC;
+    this.tracks = Array.isArray(musicCfg.TRACKS) && musicCfg.TRACKS.length > 0
+      ? musicCfg.TRACKS
+      : [
+          {
+            id: "default",
+            title: "Default Theme",
+            normalSrc: musicCfg.NORMAL_SRC || "audio/bgm_normal.mp3",
+            underscoreSrc: musicCfg.UNDERSCORE_SRC || "audio/bgm_underscore.mp3"
+          }
+        ];
 
-    this.normalAudio = this._createMusicTrack(musicCfg.NORMAL_SRC);
-    this.underscoreAudio = this._createMusicTrack(musicCfg.UNDERSCORE_SRC);
+    this.currentTrack = null;
+    this.lastTrackId = null;
+    this.normalAudio = null;
+    this.underscoreAudio = null;
 
     this.musicActive = false;
     this.musicPaused = false;
@@ -35,19 +54,88 @@ class SoundManager {
     audio.preload = "auto";
     audio.volume = 0;
     audio.muted = this.muted;
+    audio.addEventListener("loadedmetadata", () => {
+      if (this.musicActive && !this.musicPaused) {
+        this._syncTracks(true);
+      }
+    });
     return audio;
   }
 
+  _disposeAudioPair() {
+    for (const audio of [this.normalAudio, this.underscoreAudio]) {
+      if (!audio) continue;
+      audio.pause();
+      audio.removeAttribute("src");
+      audio.load();
+    }
+    this.normalAudio = null;
+    this.underscoreAudio = null;
+  }
+
+  _loadTrackPair(track) {
+    this._disposeAudioPair();
+    this.currentTrack = track;
+    this.lastTrackId = track.id;
+    this.normalAudio = this._createMusicTrack(track.normalSrc);
+    this.underscoreAudio = this._createMusicTrack(track.underscoreSrc);
+  }
+
+  getTrackById(trackId) {
+    if (!trackId) return null;
+    return this.tracks.find((t) => t.id === trackId) || null;
+  }
+
+  selectRandomTrack() {
+    if (this.tracks.length === 1) return this.tracks[0];
+    const candidates = this.tracks.filter((t) => t.id !== this.lastTrackId);
+    const pool = candidates.length > 0 ? candidates : this.tracks;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  getCurrentTrackTitle() {
+    return this.currentTrack ? this.currentTrack.title : "";
+  }
+
   _applyMusicVolumes() {
-    const normalVol = Math.max(0, Math.min(1, this.musicVolume * this.musicBlend));
-    const underVol = Math.max(0, Math.min(1, this.musicVolume * (1 - this.musicBlend)));
+    if (!this.normalAudio || !this.underscoreAudio) return;
+    const effectiveMusicVol = this.musicVolume * this.masterVolume;
+    const normalVol = Math.max(0, Math.min(1, effectiveMusicVol * this.musicBlend));
+    const underVol = Math.max(0, Math.min(1, effectiveMusicVol * (1 - this.musicBlend)));
     this.normalAudio.volume = normalVol;
     this.underscoreAudio.volume = underVol;
     this.normalAudio.muted = this.muted;
     this.underscoreAudio.muted = this.muted;
   }
 
+  loadVolumeState() {
+    try {
+      const raw = localStorage.getItem(GAME_CONFIG.SOUND_VOLUME_KEY);
+      if (raw === null) return 1;
+      const val = parseFloat(raw);
+      return Number.isFinite(val) ? Math.max(0, Math.min(1, val)) : 1;
+    } catch {
+      return 1;
+    }
+  }
+
+  saveVolumeState() {
+    try {
+      localStorage.setItem(GAME_CONFIG.SOUND_VOLUME_KEY, String(this.masterVolume));
+    } catch {
+      // Bỏ qua nếu trình duyệt chặn localStorage
+    }
+  }
+
+  setMasterVolume(vol01) {
+    this.masterVolume = Math.max(0, Math.min(1, vol01));
+    this.saveVolumeState();
+    this._applyMusicVolumes();
+    return this.masterVolume;
+  }
+
   _syncTracks(forceTargetToActive = true) {
+    if (!this.normalAudio || !this.underscoreAudio) return;
     const active = this.isBossMusic ? this.normalAudio : this.underscoreAudio;
     const inactive = this.isBossMusic ? this.underscoreAudio : this.normalAudio;
 
@@ -104,7 +192,10 @@ class SoundManager {
     }
   }
 
-  startMusic(isBossActive = false) {
+  startMusic(isBossActive = false, trackId = null) {
+    const track = this.getTrackById(trackId) || this.selectRandomTrack();
+    this._loadTrackPair(track);
+
     this.musicActive = true;
     this.musicPaused = false;
     this.isBossMusic = Boolean(isBossActive);
@@ -122,23 +213,26 @@ class SoundManager {
     this.underscoreAudio.play().catch(() => {});
     this._lastSyncCheck = performance.now();
     this._startMusicLoop();
+    return track;
   }
 
   setBossMusic(isBossActive) {
     const nextState = Boolean(isBossActive);
     if (this.isBossMusic === nextState) return;
 
-    // Đồng bộ track sắp chuyển tới đúng vị trí của track đang phát trước khi crossfade
-    const prevActive = this.isBossMusic ? this.normalAudio : this.underscoreAudio;
-    const nextActive = nextState ? this.normalAudio : this.underscoreAudio;
-    if (prevActive.readyState >= 1 && nextActive.readyState >= 1) {
-      if (Math.abs(prevActive.currentTime - nextActive.currentTime) > 0.02) {
-        nextActive.currentTime = prevActive.currentTime;
+    if (this.normalAudio && this.underscoreAudio) {
+      // Đồng bộ track sắp chuyển tới đúng vị trí của track đang phát trước khi crossfade
+      const prevActive = this.isBossMusic ? this.normalAudio : this.underscoreAudio;
+      const nextActive = nextState ? this.normalAudio : this.underscoreAudio;
+      if (prevActive.readyState >= 1 && nextActive.readyState >= 1) {
+        if (Math.abs(prevActive.currentTime - nextActive.currentTime) > 0.02) {
+          nextActive.currentTime = prevActive.currentTime;
+        }
       }
     }
 
     this.isBossMusic = nextState;
-    if (this.musicActive && !this.musicPaused) {
+    if (this.musicActive && !this.musicPaused && this.normalAudio && this.underscoreAudio) {
       if (this.normalAudio.paused) this.normalAudio.play().catch(() => {});
       if (this.underscoreAudio.paused) this.underscoreAudio.play().catch(() => {});
       this._startMusicLoop();
@@ -149,12 +243,12 @@ class SoundManager {
     if (!this.musicActive || this.musicPaused) return;
     this.musicPaused = true;
     this._stopMusicLoop();
-    this.normalAudio.pause();
-    this.underscoreAudio.pause();
+    if (this.normalAudio) this.normalAudio.pause();
+    if (this.underscoreAudio) this.underscoreAudio.pause();
   }
 
   resumeMusic() {
-    if (!this.musicActive || !this.musicPaused) return;
+    if (!this.musicActive || !this.musicPaused || !this.normalAudio || !this.underscoreAudio) return;
     this.musicPaused = false;
     this._syncTracks(true);
     this._applyMusicVolumes();
@@ -167,13 +261,21 @@ class SoundManager {
     this.musicActive = false;
     this.musicPaused = false;
     this._stopMusicLoop();
-    this.normalAudio.pause();
-    this.underscoreAudio.pause();
-    try {
-      this.normalAudio.currentTime = 0;
-      this.underscoreAudio.currentTime = 0;
-    } catch {
-      // Bỏ qua nếu chưa sẵn sàng
+    if (this.normalAudio) {
+      this.normalAudio.pause();
+      try {
+        this.normalAudio.currentTime = 0;
+      } catch {
+        // Bỏ qua nếu chưa sẵn sàng
+      }
+    }
+    if (this.underscoreAudio) {
+      this.underscoreAudio.pause();
+      try {
+        this.underscoreAudio.currentTime = 0;
+      } catch {
+        // Bỏ qua nếu chưa sẵn sàng
+      }
     }
   }
 
@@ -215,7 +317,7 @@ class SoundManager {
     this._applyMusicVolumes();
     if (!this.muted) {
       this.ensureContext();
-      if (this.musicActive && !this.musicPaused) {
+      if (this.musicActive && !this.musicPaused && this.normalAudio && this.underscoreAudio) {
         this._syncTracks(true);
         if (this.normalAudio.paused) this.normalAudio.play().catch(() => {});
         if (this.underscoreAudio.paused) this.underscoreAudio.play().catch(() => {});
@@ -240,7 +342,7 @@ class SoundManager {
       osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + durationSec);
 
       gain.gain.setValueAtTime(0.0001, now);
-      gain.gain.linearRampToValueAtTime(volume, now + 0.01);
+      gain.gain.linearRampToValueAtTime(Math.max(0.0001, volume * this.masterVolume), now + 0.01);
       gain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
 
       osc.connect(gain);
@@ -272,7 +374,8 @@ class SoundManager {
     if (!ctx) return;
 
     const duration = isBig ? 0.48 : 0.18;
-    const volume = isBig ? 0.16 : 0.1;
+    const volume = (isBig ? 0.16 : 0.1) * this.masterVolume;
+    if (volume <= 0.001) return;
 
     try {
       // Tạo nhiễu trắng lọc qua low-pass cho tiếng nổ

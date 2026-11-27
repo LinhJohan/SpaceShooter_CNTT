@@ -87,10 +87,16 @@ class GameUI {
     this.waveDisplay = document.getElementById("waveDisplay");
     this.hpBarFill = document.getElementById("hpBarFill");
     this.hpText = document.getElementById("hpText");
-    this.soundBtn = document.getElementById("soundBtn");
+    this.pauseMenuBtn = document.getElementById("pauseMenuBtn");
 
+    this.introScreen = document.getElementById("introScreen");
+    this.resetPromptScreen = document.getElementById("resetPromptScreen");
+    this.resetPromptSummary = document.getElementById("resetPromptSummary");
+    this.keepProgressBtn = document.getElementById("keepProgressBtn");
+    this.confirmResetBtn = document.getElementById("confirmResetBtn");
     this.startScreen = document.getElementById("startScreen");
     this.pauseScreen = document.getElementById("pauseScreen");
+    this.settingsScreen = document.getElementById("settingsScreen");
     this.gameOverScreen = document.getElementById("gameOverScreen");
 
     this.difficultyButtons = Array.from(document.querySelectorAll("#difficultyGroup .btn-diff"));
@@ -112,8 +118,10 @@ class GameUI {
     this.achList = document.getElementById("achList");
     this.achCountText = document.getElementById("achCountText");
     this.achToast = document.getElementById("achToast");
+    this.musicToast = document.getElementById("musicToast");
+    this.musicToastTimer = null;
     this.achOpenBtn = document.getElementById("achOpenBtn");
-    this.shakeBtn = document.getElementById("shakeBtn");
+    this.resetProgressBtn = document.getElementById("resetProgressBtn");
     this.shipGroup = document.getElementById("shipGroup");
     this.toastQueue = [];
     this.toastBusy = false;
@@ -207,25 +215,8 @@ class GameUI {
     this.canvasContainer.animate(frames, { duration: durationMs, easing: "linear" });
   }
 
-  updateShakeButton() {
-    this.shakeBtn.textContent = `Rung màn hình: ${this.shakeEnabled ? "BẬT" : "TẮT"}`;
-    this.shakeBtn.classList.toggle("active", this.shakeEnabled);
-  }
-
-  // ----- Thành tựu: nút, bảng danh sách, thông báo -----
+  // ----- Thành tựu & Reset kỷ lục -----
   bindExtraButtons() {
-    this.updateShakeButton();
-    this.shakeBtn.addEventListener("click", () => {
-      this.shakeEnabled = !this.shakeEnabled;
-      try {
-        localStorage.setItem(SHAKE_STORAGE_KEY, this.shakeEnabled ? "on" : "off");
-      } catch {
-        // Bỏ qua nếu trình duyệt chặn localStorage
-      }
-      this.updateShakeButton();
-      if (this.shakeEnabled) this.shake(5, 250);
-      this.shakeBtn.blur();
-    });
     this.achOpenBtn.addEventListener("click", () => {
       this.renderAchievements();
       this.startScreen.classList.remove("active");
@@ -236,7 +227,66 @@ class GameUI {
       this.achScreen.classList.remove("active");
       this.startScreen.classList.add("active");
     });
+    if (this.resetProgressBtn) {
+      this.resetProgressBtn.addEventListener("click", () => {
+        if (window.confirm("Bạn có chắc muốn xóa toàn bộ kỷ lục và thành tựu?")) {
+          this.resetProgress();
+        }
+        this.resetProgressBtn.blur();
+      });
+    }
+    if (this.keepProgressBtn) {
+      this.keepProgressBtn.addEventListener("click", () => {
+        this.showScreen("start");
+        this.keepProgressBtn.blur();
+      });
+    }
+    if (this.confirmResetBtn) {
+      this.confirmResetBtn.addEventListener("click", () => {
+        this.resetProgress();
+        this.showScreen("start");
+        this.confirmResetBtn.blur();
+      });
+    }
     this.updateAchButtonLabel();
+  }
+
+  resetProgress() {
+    try {
+      localStorage.removeItem(GAME_CONFIG.HIGH_SCORE_KEY);
+      localStorage.removeItem(GAME_CONFIG.LEADERBOARD_KEY);
+      localStorage.removeItem(ACH_STORAGE_KEY);
+      localStorage.removeItem(ACH_STATS_KEY);
+    } catch {
+      // Bỏ qua nếu trình duyệt chặn localStorage
+    }
+    this.achievements.unlocked = {};
+    this.achievements.stats = { kills: 0, bosses: 0, powerups: 0, blocks: 0, games: 0 };
+    this.achievements.run = { score: 0, wave: 1, hit: false, difficulty: "normal" };
+    this.toastQueue = [];
+    this.updateAchButtonLabel();
+    this.renderAchievements();
+    this.renderLeaderboard(this.startLeaderboardList);
+    this.highScoreDisplay.textContent = "0";
+  }
+
+  playIntroSplash(durationMs = 2000) {
+    if (!this.introScreen) {
+      this.showScreen(this.resetPromptScreen ? "resetPrompt" : "start");
+      return;
+    }
+    this.renderLeaderboard(this.startLeaderboardList);
+    if (this.pauseMenuBtn) this.pauseMenuBtn.style.display = "none";
+    this.introScreen.classList.remove("fade-out");
+    this.introScreen.classList.add("active");
+
+    setTimeout(() => {
+      this.introScreen.classList.add("fade-out");
+      this.showScreen(this.resetPromptScreen ? "resetPrompt" : "start");
+      setTimeout(() => {
+        this.introScreen.classList.remove("active", "fade-out");
+      }, 450);
+    }, durationMs);
   }
 
   updateAchButtonLabel() {
@@ -434,10 +484,32 @@ class GameUI {
     });
   }
 
-  updateSoundButton(isMuted) {
-    if (!this.soundBtn) return;
-    this.soundBtn.textContent = isMuted ? "🔇" : "🔊";
-    this.soundBtn.classList.toggle("active", !isMuted);
+  updateSoundButton() {
+    // Giữ lại để tương thích ngược; điều khiển âm thanh nằm trong menu Cài đặt
+  }
+
+  showNowPlaying(trackTitle, durationMs = 3000) {
+    if (!this.musicToast || !trackTitle) return;
+    if (this.musicToastTimer) {
+      clearTimeout(this.musicToastTimer);
+      this.musicToastTimer = null;
+    }
+    this.musicToast.textContent = `🎵 Đang phát: ${trackTitle}`;
+    this.musicToast.classList.add("show");
+    this.musicToastTimer = setTimeout(() => {
+      this.musicToast.classList.remove("show");
+      this.musicToastTimer = null;
+    }, durationMs);
+  }
+
+  hideNowPlaying() {
+    if (this.musicToastTimer) {
+      clearTimeout(this.musicToastTimer);
+      this.musicToastTimer = null;
+    }
+    if (this.musicToast) {
+      this.musicToast.classList.remove("show");
+    }
   }
 
   updateHUD(score, highScore, wave, hp, maxHp) {
@@ -460,16 +532,32 @@ class GameUI {
   }
 
   showScreen(state, summary = {}) {
+    if (this.resetPromptScreen) this.resetPromptScreen.classList.remove("active");
     this.startScreen.classList.remove("active");
     this.pauseScreen.classList.remove("active");
+    if (this.settingsScreen) this.settingsScreen.classList.remove("active");
     this.gameOverScreen.classList.remove("active");
     this.achScreen.classList.remove("active");
 
-    if (state === "start") {
+    if (this.pauseMenuBtn) {
+      const inGame = state === "playing" || state === "paused" || state === "settings";
+      this.pauseMenuBtn.style.display = inGame ? "inline-flex" : "none";
+    }
+
+    if (state === "resetPrompt") {
+      if (this.resetPromptSummary) {
+        const topScore = this.getTopScore();
+        const achCount = this.achievements.count();
+        this.resetPromptSummary.textContent = `Kỷ lục: ${topScore} điểm • Thành tựu: ${achCount}/${ACHIEVEMENTS.length}`;
+      }
+      if (this.resetPromptScreen) this.resetPromptScreen.classList.add("active");
+    } else if (state === "start") {
       this.renderLeaderboard(this.startLeaderboardList);
       this.startScreen.classList.add("active");
     } else if (state === "paused") {
       this.pauseScreen.classList.add("active");
+    } else if (state === "settings") {
+      if (this.settingsScreen) this.settingsScreen.classList.add("active");
     } else if (state === "gameover") {
       const finalScore = summary.score || 0;
       const finalWave = summary.wave || 1;

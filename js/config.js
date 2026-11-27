@@ -89,11 +89,68 @@ const GAME_CONFIG = {
   LEADERBOARD_LIMIT: 5,
   LAST_PLAYER_NAME_KEY: "space_shooter_cntt_last_name",
   SOUND_MUTED_KEY: "space_shooter_cntt_muted",
+  SOUND_VOLUME_KEY: "space_shooter_cntt_volume",
   MUSIC: {
-    NORMAL_SRC: "audio/bgm_normal.mp3",
-    UNDERSCORE_SRC: "audio/bgm_underscore.mp3",
     VOLUME: 0.45,
     CROSSFADE_MS: 600,
-    SYNC_THRESHOLD_SEC: 0.04
+    SYNC_THRESHOLD_SEC: 0.04,
+    NOW_PLAYING_DURATION_MS: 3000,
+    // Danh sách nhạc nền tách riêng từng bài (normal khi có Boss, underscore khi không có Boss)
+    TRACKS: [
+      {
+        id: "ablaze",
+        title: "Ablaze",
+        normalSrc: "audio/tracks/ablaze/normal.mp3",
+        underscoreSrc: "audio/tracks/ablaze/underscore.mp3"
+      },
+      {
+        id: "bewitched",
+        title: "Bewitched",
+        normalSrc: "audio/tracks/bewitched/normal.mp3",
+        underscoreSrc: "audio/tracks/bewitched/underscore.mp3"
+      },
+      {
+        id: "dead-center",
+        title: "Dead Center",
+        normalSrc: "audio/tracks/dead-center/normal.mp3",
+        underscoreSrc: "audio/tracks/dead-center/underscore.mp3"
+      },
+      {
+        id: "death-sentence",
+        title: "Death Sentence",
+        normalSrc: "audio/tracks/death-sentence/normal.mp3",
+        underscoreSrc: "audio/tracks/death-sentence/underscore.mp3"
+      },
+      {
+        id: "dissonant",
+        title: "Dissonant",
+        normalSrc: "audio/tracks/dissonant/normal.mp3",
+        underscoreSrc: "audio/tracks/dissonant/underscore.mp3"
+      },
+      {
+        id: "dwellers-fury",
+        title: "Dweller's Fury",
+        normalSrc: "audio/tracks/dwellers-fury/normal.mp3",
+        underscoreSrc: "audio/tracks/dwellers-fury/underscore.mp3"
+      },
+      {
+        id: "imperishable-valour",
+        title: "Imperishable Valour",
+        normalSrc: "audio/tracks/imperishable-valour/normal.mp3",
+        underscoreSrc: "audio/tracks/imperishable-valour/underscore.mp3"
+      },
+      {
+        id: "powerplay",
+        title: "Powerplay",
+        normalSrc: "audio/tracks/powerplay/normal.mp3",
+        underscoreSrc: "audio/tracks/powerplay/underscore.mp3"
+      },
+      {
+        id: "voltaic-dispatch",
+        title: "Voltaic Dispatch",
+        normalSrc: "audio/tracks/voltaic-dispatch/normal.mp3",
+        underscoreSrc: "audio/tracks/voltaic-dispatch/underscore.mp3"
+      }
+    ]
   }
 };

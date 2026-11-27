@@ -1,8 +1,15 @@
 // File điều khiển vòng lặp chính và ghép các thành phần của game (Chặng 2)
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
-const autoFireBtn = document.getElementById("autoFireBtn");
-const soundBtn = document.getElementById("soundBtn");
+const pauseMenuBtn = document.getElementById("pauseMenuBtn");
+const openSettingsBtn = document.getElementById("openSettingsBtn");
+const mainMenuFromPauseBtn = document.getElementById("mainMenuFromPauseBtn");
+const mainMenuFromGameOverBtn = document.getElementById("mainMenuFromGameOverBtn");
+const volumeSlider = document.getElementById("volumeSlider");
+const volumeValueText = document.getElementById("volumeValueText");
+const settingsMuteBtn = document.getElementById("settingsMuteBtn");
+const settingsAutoFireBtn = document.getElementById("settingsAutoFireBtn");
+const settingsBackBtn = document.getElementById("settingsBackBtn");
 const saveScoreBtn = document.getElementById("saveScoreBtn");
 const playerNameInput = document.getElementById("playerNameInput");
 
@@ -21,7 +28,7 @@ let enemyBullets = [];
 let powerUps = [];
 let particles = [];
 let floatingTexts = [];
-let stars = createStars(70);
+const spaceBg = new SpaceBackground(GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
 
 let boss = null;
 let bossCount = 0;
@@ -74,50 +81,31 @@ function getInputState() {
   };
 }
 
-function updateAutoFireUI() {
-  autoFireBtn.textContent = player.autoFire ? "Tự bắn: BẬT" : "Tự bắn: TẮT";
-  autoFireBtn.classList.toggle("active", player.autoFire);
+function syncSettingsUI() {
+  const volPercent = sound.muted ? 0 : Math.round(sound.masterVolume * 100);
+  if (volumeSlider) {
+    volumeSlider.value = String(volPercent);
+    volumeSlider.disabled = sound.muted;
+  }
+  if (volumeValueText) volumeValueText.textContent = `${volPercent}%`;
+  if (settingsMuteBtn) {
+    settingsMuteBtn.textContent = sound.muted ? "BẬT" : "TẮT";
+    settingsMuteBtn.classList.toggle("active", sound.muted);
+  }
+  if (settingsAutoFireBtn) {
+    settingsAutoFireBtn.textContent = player.autoFire ? "BẬT" : "TẮT";
+    settingsAutoFireBtn.classList.toggle("active", player.autoFire);
+  }
 }
 
 function toggleAutoFire() {
   player.autoFire = !player.autoFire;
-  updateAutoFireUI();
-  autoFireBtn.blur();
+  syncSettingsUI();
 }
 
 function toggleSound() {
-  const muted = sound.toggleMute();
-  ui.updateSoundButton(muted);
-  soundBtn.blur();
-}
-
-function createStars(count) {
-  const list = [];
-  for (let i = 0; i < count; i++) {
-    list.push({
-      x: Math.random() * GAME_CONFIG.CANVAS_WIDTH,
-      y: Math.random() * GAME_CONFIG.CANVAS_HEIGHT,
-      size: Math.random() < 0.3 ? 2 : 1.2,
-      speed: 0.6 + Math.random() * 1.8
-    });
-  }
-  return list;
-}
-
-function updateAndDrawStars(dtFactor, shouldMove) {
-  ctx.fillStyle = "#e2e8f0";
-  for (const star of stars) {
-    if (shouldMove) {
-      star.y += star.speed * dtFactor;
-      if (star.y > GAME_CONFIG.CANVAS_HEIGHT) {
-        star.y = 0;
-        star.x = Math.random() * GAME_CONFIG.CANVAS_WIDTH;
-      }
-    }
-    ctx.globalAlpha = star.size > 1.5 ? 0.85 : 0.45;
-    ctx.fillRect(star.x, star.y, star.size, star.size);
-  }
-  ctx.globalAlpha = 1;
+  sound.toggleMute();
+  syncSettingsUI();
 }
 
 function isColliding(a, b, padding = 4) {
@@ -221,6 +209,7 @@ function startNewGame() {
   powerUps = [];
   particles = [];
   floatingTexts = [];
+  spaceBg.reset();
 
   boss = null;
   bossCount = 0;
@@ -238,7 +227,11 @@ function startNewGame() {
   ui.achievements.notify("run_start", { difficulty: currentDifficulty.id });
   ui.updateHUD(score, highScore, wave, player.hp, player.maxHp);
   ui.showScreen("playing");
-  sound.startMusic(false);
+  const track = sound.startMusic(false);
+  if (track && track.title) {
+    const durationMs = (GAME_CONFIG.MUSIC && GAME_CONFIG.MUSIC.NOW_PLAYING_DURATION_MS) || 3000;
+    ui.showNowPlaying(track.title, durationMs);
+  }
 }
 
 function togglePause() {
@@ -257,11 +250,31 @@ function togglePause() {
   }
 }
 
+function returnToMainMenu() {
+  activeActions.clear();
+  isPointerDown = false;
+  gameState = "start";
+  sound.stopMusic();
+  ui.hideNowPlaying();
+
+  enemies = [];
+  enemyBullets = [];
+  powerUps = [];
+  particles = [];
+  floatingTexts = [];
+  boss = null;
+
+  highScore = ui.getTopScore();
+  ui.updateHUD(0, highScore, 1, player.maxHp, player.maxHp);
+  ui.showScreen("start");
+}
+
 function triggerGameOver() {
   gameState = "gameover";
   activeActions.clear();
   isPointerDown = false;
   sound.stopMusic();
+  ui.hideNowPlaying();
 
   updateHighScoreIfNeeded();
   ui.updateHUD(score, highScore, wave, 0, player.maxHp);
@@ -496,7 +509,7 @@ function drawBossWarning(currentTime) {
 function drawGame(currentTime, dtFactor) {
   ctx.clearRect(0, 0, GAME_CONFIG.CANVAS_WIDTH, GAME_CONFIG.CANVAS_HEIGHT);
 
-  updateAndDrawStars(dtFactor, gameState === "playing");
+  spaceBg.updateAndDraw(ctx, dtFactor, gameState === "playing");
 
   if (gameState === "playing" || gameState === "paused") {
     for (const item of powerUps) {
@@ -619,8 +632,41 @@ window.addEventListener("pointerup", () => {
 });
 
 // Gắn sự kiện nút bấm UI
-autoFireBtn.addEventListener("click", toggleAutoFire);
-soundBtn.addEventListener("click", toggleSound);
+pauseMenuBtn.addEventListener("click", () => {
+  if (gameState === "playing" || gameState === "paused") {
+    togglePause();
+  }
+  pauseMenuBtn.blur();
+});
+openSettingsBtn.addEventListener("click", () => {
+  syncSettingsUI();
+  ui.showScreen("settings");
+  openSettingsBtn.blur();
+});
+settingsBackBtn.addEventListener("click", () => {
+  ui.showScreen("paused");
+  settingsBackBtn.blur();
+});
+volumeSlider.addEventListener("input", () => {
+  if (sound.muted) {
+    volumeSlider.value = "0";
+    if (volumeValueText) volumeValueText.textContent = "0%";
+    return;
+  }
+  const val = Number(volumeSlider.value) / 100;
+  sound.setMasterVolume(val);
+  if (volumeValueText) volumeValueText.textContent = `${Math.round(val * 100)}%`;
+});
+settingsMuteBtn.addEventListener("click", () => {
+  toggleSound();
+  settingsMuteBtn.blur();
+});
+settingsAutoFireBtn.addEventListener("click", () => {
+  toggleAutoFire();
+  settingsAutoFireBtn.blur();
+});
+mainMenuFromPauseBtn.addEventListener("click", returnToMainMenu);
+mainMenuFromGameOverBtn.addEventListener("click", returnToMainMenu);
 saveScoreBtn.addEventListener("click", handleSaveLeaderboardScore);
 playerNameInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
@@ -631,12 +677,10 @@ playerNameInput.addEventListener("keydown", (e) => {
 
 document.getElementById("startBtn").addEventListener("click", startNewGame);
 document.getElementById("resumeBtn").addEventListener("click", togglePause);
-document.getElementById("restartFromPauseBtn").addEventListener("click", startNewGame);
 document.getElementById("restartBtn").addEventListener("click", startNewGame);
 
 // Khởi tạo giao diện ban đầu
-updateAutoFireUI();
-ui.updateSoundButton(sound.muted);
+syncSettingsUI();
 ui.updateHUD(0, highScore, 1, player.maxHp, player.maxHp);
-ui.showScreen("start");
+ui.playIntroSplash(2000);
 requestAnimationFrame(gameLoop);

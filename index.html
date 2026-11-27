@@ -23,11 +23,8 @@
         <span id="waveDisplay" class="value">1</span>
       </div>
       <div class="hud-actions">
-        <button id="autoFireBtn" class="btn-hud active" type="button" title="Phím F để bật/tắt">
-          Tự bắn: BẬT
-        </button>
-        <button id="soundBtn" class="btn-hud active" type="button" title="Phím M để bật/tắt tiếng">
-          🔊
+        <button id="pauseMenuBtn" class="btn-hud" type="button" title="Phím P hoặc Esc để mở Menu">
+          ☰ Menu
         </button>
       </div>
       <div class="hud-item hp-box">
@@ -43,8 +40,33 @@
     <main class="canvas-container">
       <canvas id="gameCanvas" width="480" height="680"></canvas>
 
+      <!-- Màn hình giới thiệu 2s đầu -->
+      <div id="introScreen" class="overlay intro-overlay active">
+        <div class="intro-card">
+          <div class="intro-badge">🚀 SPACE SHOOTER 2D</div>
+          <h2 class="intro-group">Nhóm 2</h2>
+          <p class="intro-course">Nhập môn Công Nghệ Thông Tin</p>
+          <div class="intro-divider"></div>
+          <p class="intro-loading">Đang khởi tạo tàu chiến...</p>
+        </div>
+      </div>
+
+      <!-- Màn hình hỏi Reset tiến độ sau Splash Art -->
+      <div id="resetPromptScreen" class="overlay">
+        <div class="reset-prompt-card">
+          <div class="intro-badge">💾 DỮ LIỆU ĐÃ LƯU</div>
+          <h2>TIẾN ĐỘ LẦN CHƠI TRƯỚC</h2>
+          <p class="subtitle">Bạn có muốn reset kỷ lục và thành tựu từ các phiên chơi trước không?</p>
+          <p id="resetPromptSummary" class="reset-summary"></p>
+          <div class="menu-stack">
+            <button id="keepProgressBtn" class="btn-primary" type="button">GIỮ NGUYÊN</button>
+            <button id="confirmResetBtn" class="btn-secondary btn-danger-outline" type="button">RESET TIẾN ĐỘ</button>
+          </div>
+        </div>
+      </div>
+
       <!-- Màn hình Bắt đầu -->
-      <div id="startScreen" class="overlay active">
+      <div id="startScreen" class="overlay">
         <h1 class="game-title">CHIẾN CƠ VŨ TRỤ</h1>
         <p class="subtitle">Bản dựng Chặng 2 — Boss, Power-up, Âm thanh &amp; Top 5</p>
 
@@ -64,7 +86,7 @@
 
         <div class="menu-actions">
           <button id="achOpenBtn" class="btn-secondary btn-compact" type="button">🏆 Thành tựu</button>
-          <button id="shakeBtn" class="btn-hud active" type="button">Rung màn hình: BẬT</button>
+          <button id="resetProgressBtn" class="btn-secondary btn-compact btn-danger-outline" type="button">🗑️ Reset kỷ lục</button>
         </div>
 
         <div class="controls-guide">
@@ -92,11 +114,40 @@
       <!-- Thông báo mở khóa thành tựu -->
       <div id="achToast" class="ach-toast" role="status" aria-live="polite"></div>
 
-      <!-- Màn hình Tạm dừng -->
+      <!-- Thông báo bài nhạc đang phát -->
+      <div id="musicToast" class="music-toast" role="status" aria-live="polite"></div>
+
+      <!-- Menu trong màn chơi (Tạm dừng) -->
       <div id="pauseScreen" class="overlay">
-        <h2>TẠM DỪNG</h2>
-        <button id="resumeBtn" class="btn-primary" type="button">TIẾP TỤC</button>
-        <button id="restartFromPauseBtn" class="btn-secondary" type="button">CHƠI LẠI</button>
+        <h2>MENU</h2>
+        <div class="menu-stack">
+          <button id="resumeBtn" class="btn-primary" type="button">TIẾP TỤC</button>
+          <button id="openSettingsBtn" class="btn-secondary" type="button">CÀI ĐẶT</button>
+          <button id="mainMenuFromPauseBtn" class="btn-secondary" type="button">MÀN HÌNH CHÍNH</button>
+        </div>
+      </div>
+
+      <!-- Cài đặt trong màn chơi -->
+      <div id="settingsScreen" class="overlay">
+        <h2>CÀI ĐẶT</h2>
+        <div class="settings-panel">
+          <div class="setting-row setting-row-col">
+            <div class="setting-label-row">
+              <span>Âm lượng</span>
+              <strong id="volumeValueText">100%</strong>
+            </div>
+            <input id="volumeSlider" class="volume-slider" type="range" min="0" max="100" value="100" />
+          </div>
+          <div class="setting-row">
+            <span>Tắt âm</span>
+            <button id="settingsMuteBtn" class="btn-hud" type="button">TẮT</button>
+          </div>
+          <div class="setting-row">
+            <span>Tự động bắn</span>
+            <button id="settingsAutoFireBtn" class="btn-hud active" type="button">BẬT</button>
+          </div>
+        </div>
+        <button id="settingsBackBtn" class="btn-primary" type="button">QUAY LẠI</button>
       </div>
 
       <!-- Màn hình Kết thúc (Game Over) -->
@@ -120,7 +171,10 @@
           <ol id="gameOverLeaderboardList" class="leaderboard-list"></ol>
         </div>
 
-        <button id="restartBtn" class="btn-primary" type="button">CHƠI LẠI</button>
+        <div class="gameover-actions">
+          <button id="restartBtn" class="btn-primary" type="button">CHƠI LẠI</button>
+          <button id="mainMenuFromGameOverBtn" class="btn-secondary" type="button">MÀN HÌNH CHÍNH</button>
+        </div>
       </div>
     </main>
   </div>
@@ -129,6 +183,7 @@
   <script src="js/config.js"></script>
   <script src="js/ships.js"></script>
   <script src="js/sound.js"></script>
+  <script src="js/background.js"></script>
   <script src="js/player.js"></script>
   <script src="js/enemy.js"></script>
   <script src="js/ui.js"></script>
